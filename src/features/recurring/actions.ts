@@ -2,11 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { checkLimit } from '@/domain/entitlements'
 import { AppError, runAction } from '@/lib/errors'
 import { getReferenceData, getSpaceContext } from '@/server/session'
 import { recurringFormSchema } from './schemas'
 import { postDueRecurring } from './service'
-
 
 export async function saveRecurringAction(raw: unknown) {
   return runAction('recurring.save', async () => {
@@ -16,7 +16,14 @@ export async function saveRecurringAction(raw: unknown) {
     const category = v.categoryId ? ref.categories.find((c) => c.id === v.categoryId) : null
     if (v.categoryId && (!category || category.kind !== v.type)) throw new AppError('VALIDATION', undefined, { fieldErrors: { categoryId: 'Categoria inválida para o tipo.' } })
     if (!space.members.some((m) => m.userId === v.memberId)) throw new AppError('FORBIDDEN')
-    const existing = v.id ? (await viewer.repo.listRecurring(space.id)).find((r) => r.id === v.id) : null
+    const rules = await viewer.repo.listRecurring(space.id)
+    const existing = v.id ? rules.find((r) => r.id === v.id) : null
+    if (v.id && !existing) throw new AppError('NOT_FOUND')
+    const activating = v.isActive && !existing?.isActive
+    if (activating) {
+      const limit = checkLimit(space.plan, 'recurringRules', rules.filter((r) => r.isActive).length)
+      if (!limit.allowed) throw new AppError('LIMIT_REACHED', `Seu plano permite até ${limit.limit} recorrências ativas. Pause ou exclua uma para cadastrar outra.`)
+    }
     await viewer.repo.saveRecurring(space.id, {
       id: existing?.id,
       type: v.type,
@@ -42,8 +49,13 @@ export async function saveRecurringAction(raw: unknown) {
 export async function toggleRecurringAction(id: string, active: boolean) {
   return runAction('recurring.toggle', async () => {
     const { viewer, space } = await getSpaceContext()
-    const rule = (await viewer.repo.listRecurring(space.id)).find((r) => r.id === z.uuid().parse(id))
+    const rules = await viewer.repo.listRecurring(space.id)
+    const rule = rules.find((r) => r.id === z.uuid().parse(id))
     if (!rule) throw new AppError('NOT_FOUND')
+    if (active && !rule.isActive) {
+      const limit = checkLimit(space.plan, 'recurringRules', rules.filter((r) => r.isActive).length)
+      if (!limit.allowed) throw new AppError('LIMIT_REACHED', `Seu plano permite até ${limit.limit} recorrências ativas.`)
+    }
     await viewer.repo.saveRecurring(space.id, { ...rule, isActive: active })
     revalidatePath('/movimentacoes/recorrentes')
     return null

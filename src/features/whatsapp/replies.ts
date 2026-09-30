@@ -7,7 +7,7 @@ export const REPLIES = {
     `Olá! Aqui é o PRUMO. Este número ainda não está conectado a uma conta.\n\nPara registrar gastos por aqui, entre em ${appUrl}/whatsapp e conecte seu WhatsApp.`,
   linkVerified: (name: string) => `Pronto, ${name.split(' ')[0]}! Seu WhatsApp está conectado ao PRUMO.\n\nÉ só mandar, por exemplo: “gastei 35 no almoço”.`,
   linkInvalid: 'Esse código não confere. Confira no app e mande de novo: PRUMO 123456',
-  linkExpired: 'Esse código expirou. Gere um novo em Configurações → WhatsApp no app.',
+  linkExpired: 'Esse código expirou. Gere um novo no app, na página WhatsApp.',
   linkLocked: 'Muitas tentativas com código errado. Gere um novo código no app.',
   linkConflict: 'Este número já está conectado a outra conta do PRUMO.',
   linkNotFound: 'Não encontrei um pedido de conexão para este número. Gere o código no app, em WhatsApp.',

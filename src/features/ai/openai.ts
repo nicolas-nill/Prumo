@@ -62,7 +62,11 @@ export class OpenAIProvider implements AIProvider {
         model,
         input,
         text: { format: { type: 'json_schema', name: schemaName, schema, strict: true } },
-        max_output_tokens: 1200,
+        // Financial messages must not be retained by the provider for later retrieval.
+        store: false,
+        // Short extraction task: keep reasoning models cheap and fast.
+        ...(isReasoningModel(model) ? { reasoning: { effort: 'low' } } : {}),
+        max_output_tokens: 2000,
       }),
       signal: AbortSignal.timeout(this.config.timeoutMs),
     })
@@ -152,4 +156,8 @@ export class OpenAIProvider implements AIProvider {
       },
     }
   }
+}
+
+function isReasoningModel(model: string): boolean {
+  return /^(gpt-5|o\d)/.test(model)
 }

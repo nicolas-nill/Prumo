@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { todayIn } from '@/domain/dates'
+import { parseMoneyToCents } from '@/domain/money'
 import { FIXTURE_AUDIO_MIME, FIXTURE_IMAGE_MIME, FixtureAIProvider, RECEIPT_FIXTURES } from '@/features/ai/fixtures'
 import { CaptureTransport, type MediaSource } from '@/features/whatsapp/meta/client'
 import { normalizeWebhook } from '@/features/whatsapp/meta/normalize'
@@ -13,6 +15,7 @@ import { buildDemoDb, type DemoDb } from '@/server/data/demo/store'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 const LUCAS = DEMO_USERS.lucas
+const MARINA = DEMO_USERS.marina
 let seq = 0
 
 function payload(from: string, message: Record<string, unknown>) {
@@ -217,6 +220,47 @@ describe('pipeline', () => {
     expect(reply?.body).toMatch(/pode gastar R\$|passou R\$/)
     const cat = await send(text('Quanto gastei com restaurante?'))
     expect(cat.reply?.body).toMatch(/^Restaurantes em /)
+  })
+
+  it('keeps a partner\'s private expenses out of WhatsApp answers (service-role path)', async () => {
+    const category = db.categories.find((c) => c.spaceId === DEMO_SPACE.id && c.systemKey === 'personal_care')!
+    await new DemoRepository(db, MARINA.id).createTransaction(DEMO_SPACE.id, {
+      type: 'expense',
+      amountCents: 77_777,
+      occurredOn: todayIn('America/Sao_Paulo'),
+      description: 'Presente surpresa',
+      merchant: null,
+      notes: null,
+      categoryId: category.id,
+      accountId: null,
+      cardId: null,
+      memberId: MARINA.id,
+      scope: 'personal',
+      visibility: 'private',
+    })
+    const totalIn = (body: string | undefined) => parseMoneyToCents(/R\$\s?([\d.,]+)/.exec(body ?? '')![1]!)!
+
+    const asLucas = await send(text('Quanto gastei com cuidados pessoais?'))
+    const asMarina = await send(text('Quanto gastei com cuidados pessoais?', MARINA.phone.slice(1)))
+    const month = todayIn('America/Sao_Paulo').slice(0, 7)
+    const marinaPrivate = db.transactions
+      .filter((t) => t.categoryId === category.id && t.visibility === 'private' && t.memberId === MARINA.id && t.occurredOn.startsWith(month) && !t.deletedAt)
+      .reduce((sum, t) => sum + t.amountCents, 0)
+    expect(marinaPrivate).toBeGreaterThanOrEqual(77_777)
+    expect(totalIn(asMarina.reply?.body) - totalIn(asLucas.reply?.body)).toBe(marinaPrivate)
+  })
+
+  it('falls back to rules when the monthly AI quota is used up', async () => {
+    const store = deps.store
+    deps.store = Object.assign(Object.create(store) as typeof store, { countAiUsageSince: async () => 1_000_000 })
+    media.set('audio-quota', { bytes: new TextEncoder().encode('gastei 12 no café'), mimeType: FIXTURE_AUDIO_MIME })
+    const audio = await send(payload(LUCAS.phone.slice(1), { type: 'audio', audio: { id: 'audio-quota', mime_type: 'audio/ogg' } }))
+    expect(audio.reply?.body).toMatch(/limite/)
+    expect(lucasTransactions()).toHaveLength(0)
+
+    const plain = await send(text('gastei 30 no almoço'))
+    expect(plain.result.status).toBe('processed')
+    expect(lucasTransactions()[0]).toMatchObject({ amountCents: 3000 })
   })
 
   it('logs nothing sensitive and keeps unknown sender content out of storage', async () => {
