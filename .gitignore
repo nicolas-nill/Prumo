@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/blob-report
+
+# env — never commit real secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# local database
+/.pgdata
+/supabase/.temp
+/supabase/.branches
+
+# misc
+.DS_Store
+*.pem
+*.log
