@@ -375,6 +375,12 @@ export class DemoRepository implements FinanceRepository {
     if (input.sourceRef && this.db.transactions.some((t) => t.spaceId === spaceId && t.source === input.source && t.sourceRef === input.sourceRef)) {
       throw new AppError('CONFLICT', 'Essa movimentação já foi registrada.')
     }
+    if (
+      input.recurringRuleId &&
+      this.db.transactions.some((t) => t.recurringRuleId === input.recurringRuleId && t.recurringOccurrenceOn === input.recurringOccurrenceOn)
+    ) {
+      throw new AppError('CONFLICT', 'Essa ocorrência já foi lançada.')
+    }
     const now = new Date().toISOString()
     const base = {
       spaceId,

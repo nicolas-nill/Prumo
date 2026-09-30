@@ -72,6 +72,19 @@ export const getSpaceContext = cache(async (): Promise<SpaceContext> => {
   return { viewer, profile, spaces, space, today: todayIn(space.timezone) }
 })
 
+/** Serializable data for transaction forms/lists in the active space. */
+export const getTransactionReference = cache(async () => {
+  const { viewer, space, today } = await getSpaceContext()
+  const ref = await getReferenceData(space.id)
+  return {
+    viewerId: viewer.userId,
+    today,
+    spaceType: space.type,
+    ...ref,
+    members: space.members.map((m) => ({ id: m.userId, name: m.fullName })),
+  }
+})
+
 /** Categories, groups, accounts and cards of the active space — loaded once per request. */
 export const getReferenceData = cache(async (spaceId: string) => {
   const { viewer } = await getSpaceContext()

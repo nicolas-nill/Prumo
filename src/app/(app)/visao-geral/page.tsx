@@ -15,7 +15,7 @@ import { TransactionList } from '@/components/transactions/transaction-list'
 import { formatMonthLong, monthOf } from '@/domain/dates'
 import { hrefWith, resolveMonth, resolvePerspective } from '@/features/dashboard/params'
 import { loadDashboard } from '@/features/dashboard/queries'
-import { getReferenceData, getSpaceContext } from '@/server/session'
+import { getSpaceContext, getTransactionReference } from '@/server/session'
 
 export const metadata: Metadata = { title: 'Visão geral' }
 
@@ -24,14 +24,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/visao-
   const { viewer, space, today } = await getSpaceContext()
   const month = resolveMonth(params, today)
   const view = resolvePerspective(params, space, viewer.userId)
-  const [data, ref] = await Promise.all([loadDashboard(month, view.perspective), getReferenceData(space.id)])
-  const reference = {
-    viewerId: viewer.userId,
-    today,
-    spaceType: space.type,
-    ...ref,
-    members: space.members.map((m) => ({ id: m.userId, name: m.fullName })),
-  }
+  const [data, reference] = await Promise.all([loadDashboard(month, view.perspective), getTransactionReference()])
   const movementsHref = (extra: Record<string, string | null> = {}) =>
     hrefWith('/movimentacoes', {}, { mes: month === monthOf(today) ? null : month, ...(view.selected !== 'todos' ? { pessoa: view.selected === 'eu' ? viewer.userId : view.selected } : {}), ...extra })
 
