@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils/cn'
 import { toneSolid } from './tone'
 
 interface ProgressProps {
-  /** 0..1 (values above 1 render full and switch to the danger color). */
+  /** 0..1 (values above 1 render full, in the textured danger style). */
   value: number | null
   /** Optional 0..1 marker, e.g. how much of the month has passed. */
   marker?: number | null
@@ -23,7 +23,7 @@ const TONE_CLASS: Record<string, string> = {
 export function Progress({ value, marker, tone = 'primary', size = 'md', label, className }: ProgressProps) {
   const ratio = value === null ? 0 : Math.max(0, value)
   const over = ratio > 1
-  const fill = over ? 'bg-danger' : (TONE_CLASS[tone] ?? toneSolid(tone as Tone))
+  const fill = over ? 'bar-over' : (TONE_CLASS[tone] ?? toneSolid(tone as Tone))
   return (
     <div
       role="progressbar"

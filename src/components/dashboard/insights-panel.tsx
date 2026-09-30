@@ -8,7 +8,7 @@ const COLORS = { attention: 'text-warning', positive: 'text-success', neutral: '
 
 export function InsightsPanel({ data }: { data: DashboardData }) {
   return (
-    <Panel className="h-full px-5 py-5 sm:px-6" aria-labelledby="insights-title">
+    <Panel className="px-5 py-5 sm:px-6" aria-labelledby="insights-title">
       <SectionHeading id="insights-title" eyebrow="Seu mês" title="O que chama atenção" />
       {data.insights.length === 0 ? (
         <p className="text-secondary">Nada fora do comum até aqui. Continue registrando para o PRUMO acompanhar o mês com você.</p>

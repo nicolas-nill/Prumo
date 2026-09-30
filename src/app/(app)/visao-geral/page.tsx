@@ -5,6 +5,7 @@ import { EvolutionChart } from '@/components/charts/evolution-chart'
 import { AvailableCard } from '@/components/dashboard/available-card'
 import { DistributionPanel } from '@/components/dashboard/distribution-panel'
 import { GoalsSummary } from '@/components/dashboard/goals-summary'
+import { UpcomingPanel } from '@/components/dashboard/upcoming-panel'
 import { InsightsPanel } from '@/components/dashboard/insights-panel'
 import { KpiStrip } from '@/components/dashboard/kpi-strip'
 import { PacePanel } from '@/components/dashboard/pace-panel'
@@ -74,7 +75,10 @@ export default async function DashboardPage({ searchParams }: PageProps<'/visao-
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2.1fr)_minmax(300px,0.9fr)]">
             <PacePanel data={data} />
-            <InsightsPanel data={data} />
+            <div className="flex flex-col gap-4">
+              <InsightsPanel data={data} />
+              {data.upcoming ? <UpcomingPanel data={data} /> : null}
+            </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

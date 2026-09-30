@@ -3,6 +3,7 @@
 import { forwardRef, useState, type InputHTMLAttributes } from 'react'
 import { centsToInputValue, parseMoneyToCents } from '@/domain/money'
 import { cn } from '@/lib/utils/cn'
+import { useFieldControl } from './field'
 import { controlClass } from './input'
 
 interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange' | 'size'> {
@@ -50,7 +51,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
           if (cents !== null) setText(centsToInputValue(cents))
           onBlur?.(e)
         }}
-        {...props}
+        {...useFieldControl(props)}
       />
     </div>
   )

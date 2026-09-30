@@ -317,6 +317,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Over-limit bars: danger fill + diagonal texture, so "over" never reads as a category hue. */
+@utility bar-over {
+  background-color: var(--danger);
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in oklab, var(--surface) 40%, transparent) 5px 8px);
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;

@@ -1,6 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { connection } from 'next/server'
 import { cache } from 'react'
 import { todayIn } from '@/domain/dates'
 import type { ISODate, Profile, SpaceWithMembers } from '@/domain/types'
@@ -24,6 +25,9 @@ export interface Viewer {
 
 /** The signed-in user for this request (memoized per request), or null. */
 export const getViewer = cache(async (): Promise<Viewer | null> => {
+  // Always request-time: the data mode comes from runtime env, so no page may be prerendered
+  // with a redirect decided at build time.
+  await connection()
   const mode = getDataMode()
   if (mode === 'unconfigured') return null
 
@@ -44,6 +48,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 })
 
 export async function requireViewer(): Promise<Viewer> {
+  await connection()
   if (getDataMode() === 'unconfigured') redirect('/configuracao')
   const viewer = await getViewer()
   if (!viewer) redirect('/entrar')

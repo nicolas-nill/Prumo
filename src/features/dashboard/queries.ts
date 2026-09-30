@@ -4,6 +4,7 @@ import {
   availableToSpend,
   buildInsights,
   buildPlanOverview,
+  cardInvoiceState,
   compare,
   distributeByGroup,
   goalProgress,
@@ -11,12 +12,22 @@ import {
   rankExpenseCategories,
   summarize,
 } from '@/domain/finance'
-import type { MonthKey } from '@/domain/types'
-import type { Perspective } from '@/server/data/contracts'
+import type { Card, ISODate, MonthKey } from '@/domain/types'
+import type { FinanceRepository, Perspective } from '@/server/data/contracts'
+import { upcomingOccurrences } from '@/features/recurring/service'
 import { toViews } from '@/features/transactions/reference'
 import { getReferenceData, getSpaceContext } from '@/server/session'
 
 export const EVOLUTION_MONTHS = 6
+export const UPCOMING_DAYS = 15
+
+export interface UpcomingItem {
+  id: string
+  date: ISODate
+  label: string
+  amountCents: number
+  kind: 'income' | 'expense' | 'invoice'
+}
 
 /**
  * Everything the dashboard shows for one month, computed on the server from aggregated
@@ -54,6 +65,7 @@ export async function loadDashboard(month: MonthKey, perspective: Perspective) {
     }),
     repo.listGoals(space.id),
   ])
+  const upcoming = progress.position === 'current' ? await loadUpcoming(repo, space.id, today, ref.cards, perspective) : null
 
   const summary = summarize(totals, index)
   const previous = summarize(previousTotals, index)
@@ -102,8 +114,42 @@ export async function loadDashboard(month: MonthKey, perspective: Perspective) {
     recent: toViews(recent.items, { ...ref, members }),
     recentTotal: recent.total,
     goals: activeGoals.slice(0, 3),
+    upcoming,
     hasAnyData: summary.transactionCount > 0 || evolution.some((e) => e.incomeCents + e.expenseCents > 0),
   }
 }
 
 export type DashboardData = Awaited<ReturnType<typeof loadDashboard>>
+
+/** Recurring occurrences and closed card invoices due in the next days (current month only). */
+async function loadUpcoming(
+  repo: FinanceRepository,
+  spaceId: string,
+  today: ISODate,
+  cards: Card[],
+  perspective: Perspective,
+): Promise<UpcomingItem[]> {
+  const until = addDays(today, UPCOMING_DAYS)
+  const rules = (await repo.listRecurring(spaceId)).filter((r) => !perspective.memberId || r.memberId === perspective.memberId)
+  const items: UpcomingItem[] = upcomingOccurrences(rules, today, until).map(({ rule, date }) => ({
+    id: `${rule.id}-${date}`,
+    date,
+    label: rule.description,
+    amountCents: rule.amountCents,
+    kind: rule.type,
+  }))
+
+  const invoices = await Promise.all(
+    cards
+      .filter((c) => c.isActive)
+      .map(async (card) => {
+        const closed = cardInvoiceState(today, card.closingDay, card.dueDay).closedUnpaid
+        if (!closed || compareDates(closed.dueDate, until) > 0) return null
+        const totals = await repo.cardTotals(spaceId, closed.periodStart, closed.periodEnd)
+        const amountCents = totals.find((t) => t.cardId === card.id)?.totalCents ?? 0
+        return amountCents > 0 ? { id: `invoice-${card.id}`, date: closed.dueDate, label: `Fatura ${card.name}`, amountCents, kind: 'invoice' as const } : null
+      }),
+  )
+  for (const invoice of invoices) if (invoice) items.push(invoice)
+  return items.sort((a, b) => a.date.localeCompare(b.date))
+}

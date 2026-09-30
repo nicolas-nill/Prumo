@@ -47,7 +47,7 @@ export function TransactionList({ items, reference, variant = 'full', groupByDat
         <span className="text-right">Valor</span>
       </div>
       <ul className="flex flex-col">
-        {groups.map((group) => (
+        {groups.map((group, groupIndex) => (
           <li key={`${group.date}-${group.items[0]!.id}`}>
             {groupByDate ? (
               <p className="sticky top-14 z-10 bg-bg/95 px-3 pt-4 pb-1.5 text-eyebrow backdrop-blur md:hidden lg:top-16">
@@ -55,9 +55,10 @@ export function TransactionList({ items, reference, variant = 'full', groupByDat
               </p>
             ) : null}
             <ul>
-              {group.items.map((tx) => (
+              {group.items.map((tx, index) => (
                 <Row
                   key={tx.id}
+                  divider={groupIndex === 0 && index === 0 ? 'none' : groupByDate && index === 0 ? 'desktop' : 'always'}
                   tx={tx}
                   variant={variant}
                   shared={shared}
@@ -76,7 +77,19 @@ export function TransactionList({ items, reference, variant = 'full', groupByDat
   )
 }
 
-function Row({ tx, variant, shared, today, viewerId, hideDateOnMobile, onOpen }: { tx: TransactionView; variant: 'compact' | 'full'; shared: boolean; today: string; viewerId: string; hideDateOnMobile: boolean; onOpen: () => void }) {
+interface RowProps {
+  tx: TransactionView
+  variant: 'compact' | 'full'
+  shared: boolean
+  today: string
+  viewerId: string
+  hideDateOnMobile: boolean
+  /** Top rule: none for the first row; on mobile the date header already separates groups. */
+  divider: 'none' | 'desktop' | 'always'
+  onOpen: () => void
+}
+
+function Row({ tx, variant, shared, today, viewerId, hideDateOnMobile, divider, onOpen }: RowProps) {
   const editable = canEditTransaction(tx, viewerId)
   const source = SOURCE_META[tx.source]
   const income = tx.type === 'income'
@@ -148,7 +161,7 @@ function Row({ tx, variant, shared, today, viewerId, hideDateOnMobile, onOpen }:
   )
 
   return (
-    <li className="border-t border-divider first:border-t-0">
+    <li className={cn(divider !== 'none' && 'border-t border-divider', divider === 'desktop' && 'max-md:border-t-0')}>
       {editable ? (
         <button
           type="button"

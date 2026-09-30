@@ -4,6 +4,8 @@ import { Logo } from '@/components/brand/logo'
 import { getDataMode } from '@/lib/env'
 
 export const metadata: Metadata = { title: 'Configuração pendente' }
+// Env is read at request time: a build made with other variables must not bake a redirect.
+export const dynamic = 'force-dynamic'
 
 /** Shown in production when Supabase is not configured — instead of crashing. */
 export default function ConfigPendingPage() {

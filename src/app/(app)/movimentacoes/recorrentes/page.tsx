@@ -6,7 +6,7 @@ import { RecurringDialog } from '@/components/recurring/recurring-dialog'
 import { Button } from '@/components/ui/button'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { Badge, EmptyState, Panel, SectionHeading } from '@/components/ui/misc'
-import { compareDates, formatDateShort, monthEnd, monthOf } from '@/domain/dates'
+import { addDays, compareDates, formatDateShort } from '@/domain/dates'
 import { formatMoney } from '@/domain/money'
 import { frequencyLabel } from '@/domain/finance'
 import { upcomingOccurrences } from '@/features/recurring/service'
@@ -19,8 +19,10 @@ export default async function RecurringPage() {
   const [rules, reference] = await Promise.all([viewer.repo.listRecurring(space.id), getTransactionReference()])
   const categories = new Map(reference.categories.map((c) => [c.id, c]))
   const groups = new Map(reference.groups.map((g) => [g.id, g]))
+  const memberNames = new Map(reference.members.map((m) => [m.id, m.name.split(' ')[0] ?? m.name]))
+  const showMember = reference.spaceType === 'shared' && reference.members.length > 1
   const due = rules.filter((r) => r.isActive && compareDates(r.nextOccurrenceOn, today) <= 0).length
-  const upcoming = upcomingOccurrences(rules, today, monthEnd(monthOf(today)))
+  const upcoming = upcomingOccurrences(rules, today, addDays(today, 30))
   const upcomingExpense = upcoming.filter((u) => u.rule.type === 'expense').reduce((a, u) => a + u.rule.amountCents, 0)
   const upcomingIncome = upcoming.filter((u) => u.rule.type === 'income').reduce((a, u) => a + u.rule.amountCents, 0)
 
@@ -84,6 +86,7 @@ export default async function RecurringPage() {
                             <span className="block truncate text-caption">
                               {frequencyLabel(rule.frequency, rule.interval)} · próximo {formatDateShort(rule.nextOccurrenceOn, today)}
                               {category ? ` · ${category.name}` : ''}
+                              {showMember && rule.memberId ? ` · ${memberNames.get(rule.memberId) ?? ''}` : ''}
                             </span>
                           </span>
                           <span className={`text-money ${rule.type === 'income' ? 'text-success' : ''}`}>
@@ -99,7 +102,7 @@ export default async function RecurringPage() {
             </ul>
           </Panel>
           <Panel className="h-fit px-5 py-5">
-            <SectionHeading eyebrow="Até o fim do mês" title="Previsto" />
+            <SectionHeading eyebrow="Próximos 30 dias" title="Previsto" />
             <dl className="grid grid-cols-2 gap-4">
               <div>
                 <dt className="text-caption">Saídas</dt>
@@ -117,12 +120,15 @@ export default async function RecurringPage() {
                     <span className="truncate">
                       <span className="text-fg-muted tabular">{formatDateShort(u.date, today)}</span> · {u.rule.description}
                     </span>
-                    <span className="text-money">{formatMoney(u.rule.amountCents)}</span>
+                    <span className={`text-money ${u.rule.type === 'income' ? 'text-success' : ''}`}>
+                      {u.rule.type === 'income' ? '+' : ''}
+                      {formatMoney(u.rule.amountCents)}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-4 text-secondary">Nada previsto até o fim do mês.</p>
+              <p className="mt-4 text-secondary">Nada previsto para os próximos 30 dias.</p>
             )}
           </Panel>
         </div>

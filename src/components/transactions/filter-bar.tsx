@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react'
 import { ListFilter, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog'
@@ -43,8 +43,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
   }
 
   const shared = reference.spaceType === 'shared'
-  const selects = (
-    <>
+  const fields: Record<string, ReactNode> = {
+    tipo: (
       <Field label="Tipo">
         <Select value={params.get('tipo') ?? ''} onChange={(e) => apply({ tipo: e.target.value || null, categoria: null })}>
           <option value="">Receitas e despesas</option>
@@ -52,6 +52,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           <option value="income">Receitas</option>
         </Select>
       </Field>
+    ),
+    categoria: (
       <Field label="Categoria">
         <Select value={params.get('categoria') ?? ''} onChange={(e) => apply({ categoria: e.target.value || null })}>
           <option value="">Todas</option>
@@ -66,27 +68,33 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
             ))}
         </Select>
       </Field>
-      {shared ? (
-        <>
-          <Field label="Pessoa">
-            <Select value={params.get('pessoa') ?? ''} onChange={(e) => apply({ pessoa: e.target.value || null })}>
-              <option value="">Todos</option>
-              {reference.members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.id === reference.viewerId ? `${m.name} (você)` : m.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Escopo">
-            <Select value={params.get('escopo') ?? ''} onChange={(e) => apply({ escopo: e.target.value || null })}>
-              <option value="">Pessoais e compartilhadas</option>
-              <option value="shared">Compartilhadas</option>
-              <option value="personal">Pessoais</option>
-            </Select>
-          </Field>
-        </>
-      ) : null}
+    ),
+    ...(shared
+      ? {
+          pessoa: (
+            <Field label="Pessoa">
+              <Select value={params.get('pessoa') ?? ''} onChange={(e) => apply({ pessoa: e.target.value || null })}>
+                <option value="">Todos</option>
+                {reference.members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.id === reference.viewerId ? `${m.name} (você)` : m.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ),
+          escopo: (
+            <Field label="Escopo">
+              <Select value={params.get('escopo') ?? ''} onChange={(e) => apply({ escopo: e.target.value || null })}>
+                <option value="">Pessoais e compartilhadas</option>
+                <option value="shared">Compartilhadas</option>
+                <option value="personal">Pessoais</option>
+              </Select>
+            </Field>
+          ),
+        }
+      : {}),
+    conta: (
       <Field label="Conta">
         <Select value={params.get('conta') ?? ''} onChange={(e) => apply({ conta: e.target.value || null, cartao: null })}>
           <option value="">Todas</option>
@@ -97,6 +105,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           ))}
         </Select>
       </Field>
+    ),
+    cartao: (
       <Field label="Cartão">
         <Select value={params.get('cartao') ?? ''} onChange={(e) => apply({ cartao: e.target.value || null, conta: null })}>
           <option value="">Todos</option>
@@ -107,6 +117,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           ))}
         </Select>
       </Field>
+    ),
+    origem: (
       <Field label="Origem">
         <Select value={params.get('origem') ?? ''} onChange={(e) => apply({ origem: e.target.value || null })}>
           <option value="">Todas</option>
@@ -115,6 +127,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           <option value="recurring">Recorrência</option>
         </Select>
       </Field>
+    ),
+    ordem: (
       <Field label="Ordenar por">
         <Select value={params.get('ordem') ?? ''} onChange={(e) => apply({ ordem: e.target.value || null })}>
           <option value="">Mais recentes</option>
@@ -123,8 +137,11 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           <option value="amount_asc">Menor valor</option>
         </Select>
       </Field>
-    </>
-  )
+    ),
+  }
+  // Wide screens show the everyday filters inline; everything lives in the dialog.
+  const inline = ['tipo', 'categoria', shared ? 'pessoa' : 'conta', 'ordem']
+  const hiddenActive = FILTER_KEYS.filter((k) => !inline.includes(k) && params.get(k)).length
 
   const clearAll = () => {
     setSearch('')
@@ -145,10 +162,11 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
             className="pl-9"
           />
         </div>
-        <Button variant="secondary" onClick={() => setOpen(true)} className="xl:hidden" aria-label={`Filtros${activeCount ? ` (${activeCount} ativos)` : ''}`}>
+        <Button variant="secondary" onClick={() => setOpen(true)} aria-label={`Filtros${activeCount ? ` (${activeCount} ativos)` : ''}`}>
           <ListFilter aria-hidden />
           <span className="hidden sm:inline">Filtros</span>
-          {activeCount ? <span className="inline-flex size-5 items-center justify-center rounded-full bg-accent text-[0.6875rem] text-white">{activeCount}</span> : null}
+          {activeCount ? <FilterCount count={activeCount} className="xl:hidden" /> : null}
+          {hiddenActive ? <FilterCount count={hiddenActive} className="max-xl:hidden" /> : null}
         </Button>
         {activeCount ? (
           <Button variant="ghost" onClick={clearAll} className="hidden sm:inline-flex">
@@ -156,12 +174,20 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
           </Button>
         ) : null}
       </div>
-      <div className="hidden grid-cols-4 gap-3 xl:grid 2xl:grid-cols-8 [&_label]:text-caption">{selects}</div>
+      <div className="hidden grid-cols-4 gap-3 xl:grid [&_label]:text-caption">
+        {inline.map((key) => (
+          <div key={key}>{fields[key]}</div>
+        ))}
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="sm">
           <DialogHeader title="Filtros" />
-          <DialogBody className="grid gap-4">{selects}</DialogBody>
+          <DialogBody className="grid gap-4">
+            {Object.entries(fields).map(([key, node]) => (
+              <div key={key}>{node}</div>
+            ))}
+          </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={clearAll}>
               Limpar filtros
@@ -172,4 +198,8 @@ export function FilterBar({ reference, activeCount }: { reference: TransactionRe
       </Dialog>
     </div>
   )
+}
+
+function FilterCount({ count, className }: { count: number; className?: string }) {
+  return <span className={cn('inline-flex size-5 items-center justify-center rounded-full bg-primary text-[0.6875rem] text-primary-fg', className)}>{count}</span>
 }

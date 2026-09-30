@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getDataMode, getSupabasePublicConfig } from '@/lib/env'
+import { areDevToolsEnabled, getDataMode, getSupabasePublicConfig } from '@/lib/env'
 
 /**
  * Runs before routes render:
@@ -39,6 +39,9 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isApp = matches(pathname, APP_PREFIXES)
   const mode = getDataMode()
+
+  // Developer tools (WhatsApp simulator) do not exist in production unless explicitly enabled.
+  if (matches(pathname, ['/dev']) && !areDevToolsEnabled()) return new NextResponse('Not found', { status: 404 })
 
   if (mode === 'unconfigured') {
     return isApp || matches(pathname, AUTH_PAGES) ? redirectTo(request, '/configuracao') : NextResponse.next()
