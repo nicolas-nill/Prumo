@@ -106,7 +106,7 @@ select ${space}, r.type, r.amount, pg_temp.demo_date(r.m, r.d), r.description, r
   (select id from public.categories c where c.space_id = ${space} and c.system_key = r.cat),
   r.member::uuid, r.member::uuid, r.scope, r.visibility, r.account_id, r.card_id, r.source,
   r.rule_id, case when r.rule_id is not null then pg_temp.demo_date(r.m, r.d) end,
-  r.inst_group, r.inst_no, r.inst_count, r.inst_total, pg_temp.demo_date(r.m, r.d)::timestamptz + interval '12 hours'
+  r.inst_group, r.inst_no, r.inst_count, r.inst_total, least(pg_temp.demo_date(r.m, r.d)::timestamptz + interval '12 hours', now() - interval '3 hours')
 from (values
 ${rows.join(',\n')}
 ) as r(m, d, type, amount, description, merchant, cat, member, scope, visibility, account_id, card_id, source, rule_id, inst_group, inst_no, inst_count, inst_total)

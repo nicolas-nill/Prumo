@@ -266,6 +266,41 @@ describe('plans and whatsapp linking', () => {
     ).rejects.toThrow(/PRUMO_CONFLICT/)
   })
 
+  it('service-role functions apply membership + privacy and are closed to users', async () => {
+    await expect(
+      asUser(db.client, LUCAS, (q) => q(`select * from space_category_totals_as($1, $2, '2000-01-01', '2100-01-01')`, [LUCAS, SPACE])),
+    ).rejects.toThrow(/permission denied/)
+
+    const total = async (viewer: string) =>
+      Number(
+        (
+          await asUser(
+            db.client,
+            null,
+            (q) => q(`select coalesce(sum(total_cents),0) as s from space_category_totals_as($1, $2, '2000-01-01', '2100-01-01') where type = 'expense'`, [viewer, SPACE]),
+            { role: 'service_role' },
+          )
+        ).rows[0].s,
+      )
+    expect(await total(MARINA)).toBeGreaterThan(await total(LUCAS))
+    expect(await total(outsider)).toBe(0)
+  })
+
+  it('verifies a WhatsApp link code only once, from the service role', async () => {
+    const userId = await createUser(db.client, 'gabi@prumo.dev', 'Gabi')
+    const spaceId = (
+      await asUser(db.client, userId, (q) => q(`select complete_onboarding('Gabi', 'Gabi', 'personal', 0, 'skip', null, null) as id`), { commit: true })
+    ).rows[0].id
+    const link = (await asUser(db.client, userId, (q) => q(`select * from start_whatsapp_link('+5531912345678', $1)`, [spaceId]), { commit: true })).rows[0]
+    const verify = (code: string) =>
+      asUser(db.client, null, (q) => q(`select * from verify_whatsapp_link($1, $2)`, [['+5531912345678', '+553112345678'], code]), { role: 'service_role', commit: true })
+
+    await expect(asUser(db.client, userId, (q) => q(`select * from verify_whatsapp_link($1, $2)`, [['+5531912345678'], link.code]))).rejects.toThrow(/permission denied/)
+    expect((await verify('000000')).rows[0].status).toBe('invalid')
+    expect((await verify(link.code)).rows[0]).toMatchObject({ status: 'verified', user_id: userId })
+    expect((await verify(link.code)).rows[0].status).toBe('not_found')
+  })
+
   it('does not let users verify their own identity or read others', async () => {
     await expect(
       asUser(db.client, LUCAS, (q) => q(`update whatsapp_identities set status = 'verified'`)),

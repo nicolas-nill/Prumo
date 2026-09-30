@@ -114,7 +114,7 @@ select '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0100', r.type, r.amount, pg_temp.demo_da
   (select id from public.categories c where c.space_id = '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0100' and c.system_key = r.cat),
   r.member::uuid, r.member::uuid, r.scope, r.visibility, r.account_id, r.card_id, r.source,
   r.rule_id, case when r.rule_id is not null then pg_temp.demo_date(r.m, r.d) end,
-  r.inst_group, r.inst_no, r.inst_count, r.inst_total, pg_temp.demo_date(r.m, r.d)::timestamptz + interval '12 hours'
+  r.inst_group, r.inst_no, r.inst_count, r.inst_total, least(pg_temp.demo_date(r.m, r.d)::timestamptz + interval '12 hours', now() - interval '3 hours')
 from (values
   (-5, 5, 'income', 780000, 'Salário', null, 'salary', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0001', 'shared', 'space', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0202'::uuid, null::uuid, 'recurring', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0401'::uuid, null::uuid, null::smallint, null::smallint, null::bigint),
   (-5, 5, 'income', 690000, 'Salário', null, 'salary', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0002', 'shared', 'space', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0203'::uuid, null::uuid, 'recurring', '5f0c6f6e-8a1d-4c2e-9b1a-0d3a9c1e0402'::uuid, null::uuid, null::smallint, null::smallint, null::bigint),

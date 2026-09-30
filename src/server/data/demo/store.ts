@@ -100,8 +100,11 @@ export interface StoredAiUsage {
   model: string
   inputTokens: number | null
   outputTokens: number | null
+  audioSeconds: number | null
   estimatedCostUsdMicros: number | null
+  latencyMs: number
   success: boolean
+  correlationId: string
   createdAt: string
 }
 
@@ -175,7 +178,8 @@ export function buildDemoDb(today: ISODate = todayIn(DEMO_TIMEZONE)): DemoDb {
   demoTransactions().forEach((t, i) => {
     const occurredOn = resolveDate(today, t.m, t.d)
     if (compareDates(occurredOn, today) > 0 && !t.installment) return
-    const createdAt = `${occurredOn}T15:00:00.000Z`
+    // Registered around noon of the day it happened — but never in the future.
+    const createdAt = new Date(Math.min(Date.parse(`${occurredOn}T15:00:00.000Z`), Date.now() - 3 * 3_600_000)).toISOString()
     transactions.push({
       id: demoId(`tx:${i}`),
       spaceId,

@@ -1513,6 +1513,20 @@ export type Database = {
           tx_count: number
         }[]
       }
+      space_category_totals_as: {
+        Args: {
+          p_viewer: string
+          p_space_id: string
+          p_from: string
+          p_to: string
+        }
+        Returns: {
+          category_id: string
+          type: string
+          total_cents: number
+          tx_count: number
+        }[]
+      }
       space_monthly_totals: {
         Args: {
           p_space_id: string
@@ -1555,6 +1569,17 @@ export type Database = {
           p_categories: Json
         }
         Returns: string
+      }
+      verify_whatsapp_link: {
+        Args: {
+          p_phones: string[]
+          p_code: string
+        }
+        Returns: {
+          status: string
+          identity_id: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
