@@ -48,25 +48,25 @@
   /* Budget group tones: soft background, readable ink, solid mark for charts */
   --tone-blue: #dce9ef;
   --tone-blue-ink: #44697a;
-  --tone-blue-solid: #83a9b6;
+  --tone-blue-solid: #3478a8;
   --tone-rose: #f0dfdc;
   --tone-rose-ink: #875551;
-  --tone-rose-solid: #c9928a;
+  --tone-rose-solid: #cd6a4f;
   --tone-lilac: #e7e1f0;
   --tone-lilac-ink: #6c5f82;
-  --tone-lilac-solid: #b4a2ca;
+  --tone-lilac-solid: #7a5fb5;
   --tone-sage: #e1ebe6;
   --tone-sage-ink: #4b6a5f;
-  --tone-sage-solid: #8fae9f;
+  --tone-sage-solid: #2b9477;
   --tone-sand: #f2ead8;
   --tone-sand-ink: #7c5f28;
-  --tone-sand-solid: #cdb17a;
+  --tone-sand-solid: #c68a14;
   --tone-slate: #e5e7eb;
   --tone-slate-ink: #555c6b;
-  --tone-slate-solid: #9ba2b0;
+  --tone-slate-solid: #8a8d86;
 
-  --chart-income: #6f9e89;
-  --chart-expense: #c9928a;
+  --chart-income: #2b9477;
+  --chart-expense: #cd6a4f;
   --chart-result: #26403a;
   --chart-grid: #ebe9e2;
   --chart-axis: #8a8d86;
@@ -81,6 +81,13 @@
   --shadow-lg: 0 24px 64px -20px rgb(var(--shadow-color) / 0.28), 0 4px 12px rgb(var(--shadow-color) / 0.06);
 
   --overlay: rgb(24 26 22 / 0.36);
+
+  --chat-canvas: #efece5;
+  --chat-out: #dcefe4;
+  --chat-out-fg: #1d2b25;
+  --chat-in: #ffffff;
+  --chat-in-fg: #252824;
+  --chat-meta: #55705f;
 }
 
 .dark {
@@ -122,25 +129,25 @@
 
   --tone-blue: #1f353c;
   --tone-blue-ink: #9fc8d3;
-  --tone-blue-solid: #6f9cab;
+  --tone-blue-solid: #4a8fc0;
   --tone-rose: #3a2a2c;
   --tone-rose-ink: #ddb0aa;
-  --tone-rose-solid: #c08880;
+  --tone-rose-solid: #cc775d;
   --tone-lilac: #2f2a3c;
   --tone-lilac-ink: #c1b3d8;
-  --tone-lilac-solid: #9d8bb8;
+  --tone-lilac-solid: #8c74cb;
   --tone-sage: #20342c;
   --tone-sage-ink: #a3d0bc;
-  --tone-sage-solid: #75a18d;
+  --tone-sage-solid: #36a07f;
   --tone-sand: #37321f;
   --tone-sand-ink: #dcc48f;
-  --tone-sand-solid: #b79a5e;
+  --tone-sand-solid: #b8862f;
   --tone-slate: #262b33;
   --tone-slate-ink: #b4bccb;
-  --tone-slate-solid: #7e8797;
+  --tone-slate-solid: #7f8c87;
 
-  --chart-income: #6fb394;
-  --chart-expense: #c98f87;
+  --chart-income: #36a07f;
+  --chart-expense: #cc775d;
   --chart-result: #d7e8df;
   --chart-grid: #1f2b27;
   --chart-axis: #83908b;
@@ -155,6 +162,13 @@
   --shadow-lg: 0 28px 72px -24px rgb(0 0 0 / 0.7), 0 4px 12px rgb(0 0 0 / 0.35);
 
   --overlay: rgb(3 6 5 / 0.62);
+
+  --chat-canvas: #0c1210;
+  --chat-out: #1f3d31;
+  --chat-out-fg: #e6f2ec;
+  --chat-in: #1b2723;
+  --chat-in-fg: #edf2ef;
+  --chat-meta: #8fb3a2;
 }
 
 @theme inline {
@@ -191,6 +205,12 @@
   --color-focus: var(--focus);
   --color-track: var(--track);
   --color-overlay: var(--overlay);
+  --color-chat-canvas: var(--chat-canvas);
+  --color-chat-out: var(--chat-out);
+  --color-chat-out-fg: var(--chat-out-fg);
+  --color-chat-in: var(--chat-in);
+  --color-chat-in-fg: var(--chat-in-fg);
+  --color-chat-meta: var(--chat-meta);
 
   --color-tone-blue: var(--tone-blue);
   --color-tone-blue-ink: var(--tone-blue-ink);
@@ -231,7 +251,6 @@
   font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
   line-height: 1.04;
   letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
 }
 @utility text-page-title {
   font-family: var(--font-display);
@@ -282,11 +301,17 @@
   text-transform: uppercase;
   color: var(--fg-muted);
 }
+/* Values in lists/tables: tabular so columns align. Standalone figures use text-display. */
 @utility text-money {
   font-family: var(--font-display);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+@utility text-figure {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 @utility tabular {
   font-variant-numeric: tabular-nums;

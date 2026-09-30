@@ -25,6 +25,7 @@ const cat = (id: string, name: string, groupId: string | null, kind: 'income' | 
   id,
   spaceId: SPACE,
   groupId,
+  systemKey: null,
   name,
   kind,
   icon: null,

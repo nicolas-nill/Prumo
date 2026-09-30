@@ -29,7 +29,7 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
 export class AppError extends Error {
   readonly code: ErrorCode
   readonly fieldErrors?: Record<string, string>
-  readonly cause?: unknown
+  override readonly cause?: unknown
 
   constructor(code: ErrorCode, message?: string, options?: { fieldErrors?: Record<string, string>; cause?: unknown }) {
     super(message ?? DEFAULT_MESSAGES[code])

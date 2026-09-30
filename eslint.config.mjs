@@ -6,6 +6,8 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // Explicit version: eslint-plugin-react's auto-detection uses an API removed in ESLint 10.
+    settings: { react: { version: '19.3' } },
     rules: {
       'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-unused-vars': [
